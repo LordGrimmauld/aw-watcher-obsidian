@@ -11,3 +11,6 @@ The data being collected by this plugin is sent to the ActivityWatch server runn
 To contribute, anyone can make Pull Requests. Considering this is a hobby project, they may or may not be merged, and merges may take a while depending on my available schedule.
 To start contributing, reading the Obsidian plugin *getting started* entry on the obsidian forum (https://forum.obsidian.md/t/how-to-get-started-with-developing-a-custom-plugin/8157/3) may help.
 For documentation on watchers for ActivityWatch, the documentation entry at https://docs.activitywatch.net/en/latest/examples/writing-watchers.html might help. Just keep in mind Obsidian does not allow post requests using axios or fetch due to CORS policy. There is an official JS client for ActivityWatch at https://github.com/ActivityWatch/aw-client-js, but it does not work due to using axios instead of the unrestricted request of the Obsidian API. Any requests to ActivityWatch API being made need to be rewritten to use the Obsidian request API.
+
+## Credits
+To build the watcher API used in this project I tightly followed the official API at https://github.com/ActivityWatch/aw-client-js.
