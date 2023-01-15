@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-watcher-plugin",
+	"name": "ActivityWatch",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "This is a plugin bridging compatibility between ActivityWatch and Obsidian.",
+	"author": "Grimmauld",
+	"authorUrl": "https://github.com/LordGrimmauld",
+	"isDesktopOnly": false
+}
