@@ -1,4 +1,13 @@
-import {App, Plugin, PluginSettingTab, request, RequestUrlParam, Setting} from 'obsidian';
+import {
+	App,
+	Plugin,
+	PluginSettingTab,
+	request,
+	RequestUrlParam,
+	Setting,
+	apiVersion,
+	FileSystemAdapter
+} from 'obsidian';
 import * as os from "os";
 
 
@@ -80,11 +89,15 @@ export default class ActivityWatchPlugin extends Plugin {
 
 		this.registerInterval(window.setInterval(() => {
 			const file = this.app.workspace.getActiveFile();
+			const adapter = this.app.vault.adapter;
 			if (file) {
 				this.send_heartbeat_data(this.bucket_id, {
-					"file": file.basename,
-					"project": this.app.vault.getName(),
-					"language": "Markdown"
+					"file": "/" + file.path,
+					"project": file.vault.getName(),
+					"language": "Markdown", // todo: map file extension to language
+					"projectPath": adapter instanceof FileSystemAdapter ? adapter.getBasePath() : "unknown vault path",
+					"editor": "Obsidian",
+					"editorVersion": apiVersion
 				}, this.sleeptime + 1)
 			}
 		}, this.sleeptime * 1000));
