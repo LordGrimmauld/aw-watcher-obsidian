@@ -76,11 +76,11 @@ export default class ActivityWatchPlugin extends Plugin {
 		await this.loadSettings();
 		await this.init()
 
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new ObsidianWatcherSettingTab(this.app, this));
 
 		this.registerInterval(window.setInterval(() => {
 			const file = this.app.workspace.getActiveFile();
-			if (file != null) {
+			if (file) {
 				this.send_heartbeat_data(this.bucket_id, {
 					"file": file.basename,
 					"project": this.app.vault.getName(),
@@ -103,7 +103,7 @@ export default class ActivityWatchPlugin extends Plugin {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
+class ObsidianWatcherSettingTab extends PluginSettingTab {
 	plugin: ActivityWatchPlugin;
 
 	constructor(app: App, plugin: ActivityWatchPlugin) {

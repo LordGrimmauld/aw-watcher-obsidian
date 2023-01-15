@@ -6,5 +6,5 @@
 	"description": "This is a plugin bridging compatibility between ActivityWatch and Obsidian.",
 	"author": "Grimmauld",
 	"authorUrl": "https://github.com/LordGrimmauld",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }
