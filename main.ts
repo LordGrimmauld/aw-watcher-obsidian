@@ -4,10 +4,10 @@ import * as os from "os";
 
 class AWrequest implements RequestUrlParam {
 	body: string | ArrayBuffer;
-	contentType: string = "application/json";
+	contentType = "application/json";
 	headers: Record<string, string> = {"Content-type": "application/json", "charset": "utf-8"};
-	method: string = "post";
-	throw: boolean = true;
+	method = "post";
+	throw = true;
 	url: string;
 
 	constructor(url: string, body: string) {
@@ -24,18 +24,19 @@ const DEFAULT_SETTINGS: ActivityWatcherSettings = {
 	devServer: false
 }
 
+
 export default class ActivityWatchPlugin extends Plugin {
 	settings: ActivityWatcherSettings;
 	hostname: string = os.hostname()
 	endpoint_url: string
-	watcher_name: string = "aw-watcher-obsidian"
+	watcher_name = "aw-watcher-obsidian"
 	bucket_id: string
-	sleeptime: number = 1  // loop cycle time
+	sleeptime = 5  // loop cycle time
 	statusBarItemEl: HTMLElement
 
 	async init() {
 		this.statusBarItemEl.setText('ActivityWatch initializing...');
-		let port = this.settings.devServer ? 5666 : 5600
+		const port = this.settings.devServer ? 5666 : 5600
 		this.bucket_id = `${this.watcher_name}_${this.hostname}`
 		this.endpoint_url = `http://127.0.0.1:${port}/api/0/`
 
@@ -52,23 +53,21 @@ export default class ActivityWatchPlugin extends Plugin {
 	}
 
 	async post(endpoint: string, data: object) {
-		let req = new AWrequest(this.endpoint_url + endpoint, JSON.stringify(data))
-		await request(req)
+		await request(new AWrequest(this.endpoint_url + endpoint, JSON.stringify(data)))
 	}
 
 	async create_bucket(id: string, event_type: string) {
-		let endpoint = `buckets/${id}`
-		let data = {
+		const data = {
 			"client": this.watcher_name,
 			"hostname": this.hostname,
 			"type": event_type,
 		}
-		await this.post(endpoint, data)
+		await this.post(`buckets/${id}`, data)
 	}
 
 	async send_heartbeat_data(id: string, heartbeat_data: object, pulsetime: number) {
-		let endpoint = `buckets/${id}/heartbeat?pulsetime=${pulsetime}`
-		let t = new Date().toISOString().slice(0, -1)
+		const endpoint = `buckets/${id}/heartbeat?pulsetime=${pulsetime}`
+		const t = new Date().toISOString().slice(0, -1)
 		await this.post(endpoint, {"timestamp": t, "duration": 0, "data": heartbeat_data})
 	}
 

@@ -22,9 +22,5 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"aw-client": "^0.3.3",
-		"axios": "^1.2.2",
-		"electron-fetch": "^1.9.1",
-		"node-fetch": "^3.3.0"
 	}
 }
