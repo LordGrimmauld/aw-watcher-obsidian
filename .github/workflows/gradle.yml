@@ -23,6 +23,10 @@ jobs:
                   node-version: ${{ matrix.node-version }}
             - run: npm ci
             - run: npm run build --if-present
+            - name: json-syntax-check
+              uses: limitusus/json-syntax-check@v1
+              with:
+                  pattern: "\\.json$"
             - uses: actions/upload-artifact@v3
               with:
                   path: ./*.js
