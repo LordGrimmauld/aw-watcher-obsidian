@@ -96,26 +96,26 @@ export default class ActivityWatchPlugin extends Plugin {
 
 	async sendFileHeartbeatEvent(file: Nullable<TAbstractFile>) {
 		await this.sendAbstractFileEvent(file, {
-			"eventType": "foss.grimmauld.aw.watcher.obsidian.activeFileHeartbeatEvent"
+			"eventType": "obsidian.activeFileHeartbeatEvent"
 		}, this.sleeptime + 1)
 	}
 
 	async sendFileRenameEvent(file: Nullable<TAbstractFile>, oldPath: string) {
 		await this.sendAbstractFileEvent(file, {
-			"eventType": "foss.grimmauld.aw.watcher.obsidian.renameFileEvent",
+			"eventType": "obsidian.renameFileEvent",
 			"oldPath": oldPath
 		}, 0);
 	}
 
 	async sendFileDeleteEvent(oldPath: Nullable<TAbstractFile>) {
 		await this.sendAbstractFileEvent(oldPath, {
-			"eventType": "foss.grimmauld.aw.watcher.obsidian.deleteFileEvent",
+			"eventType": "obsidian.deleteFileEvent",
 		}, 0);
 	}
 
 	async sendFileCreateEvent(oldPath: Nullable<TAbstractFile>) {
 		await this.sendAbstractFileEvent(oldPath, {
-			"eventType": "foss.grimmauld.aw.watcher.obsidian.createFileEvent",
+			"eventType": "obsidian.createFileEvent",
 		}, 0);
 	}
 
