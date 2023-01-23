@@ -1,15 +1,16 @@
 import {
+	apiVersion,
 	App,
+	FileSystemAdapter,
 	Plugin,
 	PluginSettingTab,
 	request,
 	RequestUrlParam,
-	Setting,
-	apiVersion,
-	FileSystemAdapter
+	Setting, TAbstractFile
 } from 'obsidian';
 import * as os from "os";
 
+type Nullable<T> = T | null;
 
 class AWrequest implements RequestUrlParam {
 	body: string | ArrayBuffer;
@@ -32,7 +33,6 @@ interface ActivityWatcherSettings {
 const DEFAULT_SETTINGS: ActivityWatcherSettings = {
 	devServer: false
 }
-
 
 export default class ActivityWatchPlugin extends Plugin {
 	settings: ActivityWatcherSettings;
@@ -57,7 +57,7 @@ export default class ActivityWatchPlugin extends Plugin {
 			console.log(`endpoint_url is ${this.endpoint_url}`)
 		}
 
-		await this.create_bucket(this.bucket_id, "app.editor.activity")
+		await this.createBucket(this.bucket_id, "app.editor.activity")
 		this.statusBarItemEl.setText('ActivityWatch active');
 	}
 
@@ -65,7 +65,7 @@ export default class ActivityWatchPlugin extends Plugin {
 		await request(new AWrequest(this.endpoint_url + endpoint, JSON.stringify(data)))
 	}
 
-	async create_bucket(id: string, event_type: string) {
+	async createBucket(id: string, event_type: string) {
 		const data = {
 			"client": this.watcher_name,
 			"hostname": this.hostname,
@@ -74,10 +74,49 @@ export default class ActivityWatchPlugin extends Plugin {
 		await this.post(`buckets/${id}`, data)
 	}
 
-	async send_heartbeat_data(id: string, heartbeat_data: object, pulsetime: number) {
+	async sendHeartbeatData(id: string, heartbeat_data: object, pulsetime: number) {
 		const endpoint = `buckets/${id}/heartbeat?pulsetime=${pulsetime}`
 		const t = new Date().toISOString().slice(0, -1)
 		await this.post(endpoint, {"timestamp": t, "duration": 0, "data": heartbeat_data})
+	}
+
+	async sendAbstractFileEvent(file: Nullable<TAbstractFile>, extraData: Nullable<object>, pulseTime: number) {
+		if (file) {
+			await this.sendHeartbeatData(this.bucket_id, {
+				"file": "/" + file.path,
+				"project": file.vault.getName(),
+				"language": "Markdown", // todo: map file extension to language
+				"projectPath": file.vault.adapter instanceof FileSystemAdapter ? file.vault.adapter.getBasePath() : "unknown vault path",
+				"editor": "Obsidian",
+				"editorVersion": apiVersion,
+				...(extraData ? extraData : {})
+			}, pulseTime)
+		}
+	}
+
+	async sendFileHeartbeatEvent(file: Nullable<TAbstractFile>) {
+		await this.sendAbstractFileEvent(file, {
+			"eventType": "foss.grimmauld.aw.watcher.obsidian.activeFileHeartbeatEvent"
+		}, this.sleeptime + 1)
+	}
+
+	async sendFileRenameEvent(file: Nullable<TAbstractFile>, oldPath: string) {
+		await this.sendAbstractFileEvent(file, {
+			"eventType": "foss.grimmauld.aw.watcher.obsidian.renameFileEvent",
+			"oldPath": oldPath
+		}, 0);
+	}
+
+	async sendFileDeleteEvent(oldPath: Nullable<TAbstractFile>) {
+		await this.sendAbstractFileEvent(oldPath, {
+			"eventType": "foss.grimmauld.aw.watcher.obsidian.deleteFileEvent",
+		}, 0);
+	}
+
+	async sendFileCreateEvent(oldPath: Nullable<TAbstractFile>) {
+		await this.sendAbstractFileEvent(oldPath, {
+			"eventType": "foss.grimmauld.aw.watcher.obsidian.createFileEvent",
+		}, 0);
 	}
 
 	async onload() {
@@ -85,21 +124,22 @@ export default class ActivityWatchPlugin extends Plugin {
 		await this.loadSettings();
 		await this.init()
 
+		this.registerEvent(app.vault.on('rename', (file, oldPath) =>
+			this.sendFileRenameEvent(file, oldPath)
+		));
+
+		this.registerEvent(app.vault.on('delete', oldFile =>
+			this.sendFileDeleteEvent(oldFile)
+		));
+
+		this.registerEvent(app.vault.on('create', oldFile =>
+			this.sendFileCreateEvent(oldFile)
+		));
+
 		this.addSettingTab(new ObsidianWatcherSettingTab(this.app, this));
 
 		this.registerInterval(window.setInterval(() => {
-			const file = this.app.workspace.getActiveFile();
-			const adapter = this.app.vault.adapter;
-			if (file) {
-				this.send_heartbeat_data(this.bucket_id, {
-					"file": "/" + file.path,
-					"project": file.vault.getName(),
-					"language": "Markdown", // todo: map file extension to language
-					"projectPath": adapter instanceof FileSystemAdapter ? adapter.getBasePath() : "unknown vault path",
-					"editor": "Obsidian",
-					"editorVersion": apiVersion
-				}, this.sleeptime + 1)
-			}
+			this.sendFileHeartbeatEvent(this.app.workspace.getActiveFile());
 		}, this.sleeptime * 1000));
 	}
 
