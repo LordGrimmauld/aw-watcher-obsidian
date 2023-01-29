@@ -6,7 +6,8 @@ import {
 	PluginSettingTab,
 	request,
 	RequestUrlParam,
-	Setting, TAbstractFile
+	Setting,
+	TAbstractFile
 } from 'obsidian';
 import * as os from "os";
 
@@ -62,7 +63,13 @@ export default class ActivityWatchPlugin extends Plugin {
 	}
 
 	async post(endpoint: string, data: object) {
-		await request(new AWrequest(this.endpoint_url + endpoint, JSON.stringify(data)))
+		const r = new AWrequest(this.endpoint_url + endpoint, JSON.stringify(data))
+		try {
+			await request(r)
+		} catch (e) {
+			console.log(`Request to URL [${r.url}] using [${r.method}], Header [${r.headers}], Body [${r.body}] failed!`)
+			throw e
+		}
 	}
 
 	async createBucket(id: string, event_type: string) {
@@ -76,8 +83,7 @@ export default class ActivityWatchPlugin extends Plugin {
 
 	async sendHeartbeatData(id: string, heartbeat_data: object, pulsetime: number) {
 		const endpoint = `buckets/${id}/heartbeat?pulsetime=${pulsetime}`
-		const t = new Date().toISOString()
-		await this.post(endpoint, {"timestamp": t, "duration": 0, "data": heartbeat_data})
+		await this.post(endpoint, {"timestamp": new Date().toISOString(), "duration": 0, "data": heartbeat_data})
 	}
 
 	async sendAbstractFileEvent(file: Nullable<TAbstractFile>, extraData: Nullable<object>, pulseTime: number) {
@@ -175,7 +181,7 @@ class ObsidianWatcherSettingTab extends PluginSettingTab {
 			.setDesc('If enabled, uses development server for ActivityWatch instead of production. Default off.')
 			.addToggle(t => t.setValue(this.plugin.settings.devServer)
 				.onChange(async (value) => {
-					console.log('Secret: ' + value);
+					console.log(`switching plugin to use ${value ? "development" : "production"} backend`)
 					this.plugin.settings.devServer = value;
 					await this.plugin.saveSettings();
 					await this.plugin.init()
