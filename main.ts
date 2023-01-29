@@ -76,7 +76,7 @@ export default class ActivityWatchPlugin extends Plugin {
 
 	async sendHeartbeatData(id: string, heartbeat_data: object, pulsetime: number) {
 		const endpoint = `buckets/${id}/heartbeat?pulsetime=${pulsetime}`
-		const t = new Date().toISOString().slice(0, -1) + "000+00:00"  // there is probably better ways, but this is required for rust server to work
+		const t = new Date().toISOString()
 		await this.post(endpoint, {"timestamp": t, "duration": 0, "data": heartbeat_data})
 	}
 
