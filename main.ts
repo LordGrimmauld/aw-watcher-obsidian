@@ -51,7 +51,7 @@ export default class ActivityWatchPlugin extends Plugin {
 		this.endpoint_url = `http://127.0.0.1:${port}/api/0/`
 
 		if (this.settings.devServer) {
-			console.log(`sleeptime is ${this.sleeptime}`)
+			console.log(`sleeptime is ${this.sleeptime}` + (this.sleeptime <= 0 ? ", skipping any timed heartbeats" : ""))
 			console.log(`watcher_name is ${this.watcher_name}`)
 			console.log(`port is ${port}`)
 			console.log(`bucket_id is ${this.bucket_id}`)
@@ -81,14 +81,14 @@ export default class ActivityWatchPlugin extends Plugin {
 		await this.post(`buckets/${id}`, data)
 	}
 
-	async sendHeartbeatData(id: string, heartbeat_data: object, pulsetime: number) {
+	async sendData(id: string, heartbeat_data: object, pulsetime: number) {
 		const endpoint = `buckets/${id}/heartbeat?pulsetime=${pulsetime}`
 		await this.post(endpoint, {"timestamp": new Date().toISOString(), "duration": 0, "data": heartbeat_data})
 	}
 
 	async sendAbstractFileEvent(file: Nullable<TAbstractFile>, extraData: Nullable<object>, pulseTime: number) {
 		if (file) {
-			await this.sendHeartbeatData(this.bucket_id, {
+			await this.sendData(this.bucket_id, {
 				"file": "/" + file.path,
 				"project": file.vault.getName(),
 				"language": "Markdown", // todo: map file extension to language
@@ -96,7 +96,7 @@ export default class ActivityWatchPlugin extends Plugin {
 				"editor": "Obsidian",
 				"editorVersion": apiVersion,
 				...(extraData ? extraData : {})
-			}, pulseTime)
+			}, pulseTime)  // Yes this is sent exactly like a heartbeat. Heartbeats can be 0 duration and will split the timeline at that point in time. According to ActivityWatch developers, this is a valid way of doing things.
 		}
 	}
 
@@ -119,8 +119,8 @@ export default class ActivityWatchPlugin extends Plugin {
 		}, 0);
 	}
 
-	async sendFileCreateEvent(oldPath: Nullable<TAbstractFile>) {
-		await this.sendAbstractFileEvent(oldPath, {
+	async sendFileCreateEvent(path: Nullable<TAbstractFile>) {
+		await this.sendAbstractFileEvent(path, {
 			"eventType": "obsidian.createFileEvent",
 		}, 0);
 	}
@@ -130,23 +130,24 @@ export default class ActivityWatchPlugin extends Plugin {
 		await this.loadSettings();
 		await this.init()
 
-		this.registerEvent(app.vault.on('rename', (file, oldPath) =>
+		this.registerEvent(this.app.vault.on('rename', (file, oldPath) =>
 			this.sendFileRenameEvent(file, oldPath)
-		));
+		))
 
-		this.registerEvent(app.vault.on('delete', oldFile =>
-			this.sendFileDeleteEvent(oldFile)
-		));
+		this.registerEvent(this.app.vault.on('delete', this.sendFileDeleteEvent))
 
-		this.registerEvent(app.vault.on('create', oldFile =>
-			this.sendFileCreateEvent(oldFile)
-		));
+		this.app.workspace.onLayoutReady(() => {
+				this.registerEvent(this.app.vault.on('create', f => this.sendFileCreateEvent(f)))
+			}
+		)
 
 		this.addSettingTab(new ObsidianWatcherSettingTab(this.app, this));
 
-		this.registerInterval(window.setInterval(() => {
-			this.sendFileHeartbeatEvent(this.app.workspace.getActiveFile());
-		}, this.sleeptime * 1000));
+		if (this.sleeptime > 0) {
+			this.registerInterval(window.setInterval(() => {
+				this.sendFileHeartbeatEvent(this.app.workspace.getActiveFile())
+			}, this.sleeptime * 1000));
+		}
 	}
 
 	onunload() {
