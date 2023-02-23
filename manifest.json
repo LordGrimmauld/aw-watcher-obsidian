@@ -1,7 +1,7 @@
 {
 	"id": "aw-watcher-obsidian",
 	"name": "ActivityWatch",
-	"version": "1.2.3",
+	"version": "1.3.0",
 	"minAppVersion": "0.15.0",
 	"description": "This is a plugin bridging compatibility between ActivityWatch and Obsidian.",
 	"author": "Grimmauld",
